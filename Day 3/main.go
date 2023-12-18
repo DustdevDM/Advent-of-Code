@@ -7,86 +7,80 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/fatih/color"
 )
 
 func main() {
 	file := "input.txt"
-	input := parseInput(file)
+	input := Parse(file)
 
-	color.Cyan("INPUT:")
-	for _, element1 := range input {
-		for _, element2 := range element1 {
-			fmt.Printf("%c", element2)
-		}
-		fmt.Printf("\n")
-	}
-	print("\n")
+	positiveCoordinates := InputToNumericPartMap(file, input)
 
-	positiveCoordinates := generatePositiveCoordinates(file, input)
-
-	color.Cyan("POSITIVE COORDINATES:")
-	for _, element1 := range positiveCoordinates {
-		for _, element2 := range element1 {
-			if element2 == 2 {
+	fmt.Println("POSITIVE COORDINATES:")
+	for _, line := range positiveCoordinates {
+		for _, partMapping := range line {
+			if partMapping == NextToPart {
 				fmt.Printf("🟢")
 			}
-			if element2 == 1 {
+			if partMapping == Part {
 				fmt.Printf("🔵")
 			}
-			if element2 == 0 {
+			if partMapping == NotPart {
 				fmt.Printf("🔴")
 			}
 		}
 		fmt.Printf("\n")
 	}
 
-	result := getResult(input, positiveCoordinates)
-	color.Cyan("RESULT:")
-	fmt.Println(result)
+	result := GetResultTask1(input, positiveCoordinates)
+	fmt.Printf("\nDay 3 Task 1:%s", strconv.Itoa(result))
 
-	result2 := generateResult2(input)
-	color.Cyan("RESULT 2:")
-	fmt.Println(result2)
+	result2 := GetResultTask2(input)
+	fmt.Printf("\nDay 3 Task 2:%s", strconv.Itoa(result2))
+
 }
 
-type intermediateHolder struct {
-	stack                 []rune
-	hadPositiveCoordinate bool
+// Struct used for stacking and determine number with positive part-type values
+type IntermediateHolder struct {
+	Stack               []rune
+	HadPositivePartType bool
 }
 
-func getResult(input [][]rune, positiveCoordinates [][]int) int {
+// Returns Advent of Code Day 3 result for the first task
+func GetResultTask1(input [][]rune, partTypeMapping [][]int) int {
 	returnValue := 0
 
 	for x := range input {
-		var hold intermediateHolder
+		var hold IntermediateHolder
 		for y := range input[x] {
-			if runeIsADigit(input[x][y]) {
-				//is a number
-				hold.stack = append(hold.stack, input[x][y])
-				if positiveCoordinates[x][y] == 2 {
-					hold.hadPositiveCoordinate = true
-				}
-			} else {
-				//is not a number
-				if len(hold.stack) != 0 {
-					if hold.hadPositiveCoordinate {
-						//number endet and is part of the result
+			if IsRuneDigit(input[x][y]) {
 
-						stackToInt, err := strconv.Atoi(string(hold.stack))
+				hold.Stack = append(hold.Stack, input[x][y])
+
+				if partTypeMapping[x][y] == NextToPart {
+					hold.HadPositivePartType = true
+				}
+
+			} else {
+
+				if len(hold.Stack) != 0 {
+
+					if hold.HadPositivePartType {
+						//number ended and is part of the result
+
+						stackToInt, err := strconv.Atoi(string(hold.Stack))
 
 						if err != nil {
 							log.Panic(err)
 						}
 
 						returnValue += stackToInt
-						hold.stack = make([]rune, 0)
-						hold.hadPositiveCoordinate = false
+						hold.Stack = make([]rune, 0)
+						hold.HadPositivePartType = false
+
 					} else {
-						//number endet but is not part of result
-						hold.stack = make([]rune, 0)
-						hold.hadPositiveCoordinate = false
+						//number ended but is not part of result
+						hold.Stack = make([]rune, 0)
+						hold.HadPositivePartType = false
 					}
 				}
 			}
@@ -96,7 +90,8 @@ func getResult(input [][]rune, positiveCoordinates [][]int) int {
 	return returnValue
 }
 
-func generateResult2(input [][]rune) int {
+// Returns Advent of Code Day 3 result for the second task
+func GetResultTask2(input [][]rune) int {
 
 	returnValue := 0
 
@@ -105,43 +100,43 @@ func generateResult2(input [][]rune) int {
 			if input[x][y] == '*' {
 				numbers := make([][]rune, 0)
 				if x-1 < 0 == false {
-					if runeIsADigit(input[x-1][y]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x-1, y))
+					if IsRuneDigit(input[x-1][y]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x-1, y))
 					}
 				}
 				if x+1 > len(input) == false {
-					if runeIsADigit(input[x+1][y]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x+1, y))
+					if IsRuneDigit(input[x+1][y]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x+1, y))
 					}
 				}
 				if y-1 < 0 == false {
-					if runeIsADigit(input[x][y-1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x, y-1))
+					if IsRuneDigit(input[x][y-1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x, y-1))
 					}
 				}
 				if y+1 > len(input[x]) == false {
-					if runeIsADigit(input[x][y+1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x, y+1))
+					if IsRuneDigit(input[x][y+1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x, y+1))
 					}
 				}
 				if x+1 > len(input) == false && y+1 > len(input[x]) == false {
-					if runeIsADigit(input[x+1][y+1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x+1, y+1))
+					if IsRuneDigit(input[x+1][y+1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x+1, y+1))
 					}
 				}
 				if x-1 < 0 == false && y-1 < 0 == false {
-					if runeIsADigit(input[x-1][y-1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x-1, y-1))
+					if IsRuneDigit(input[x-1][y-1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x-1, y-1))
 					}
 				}
 				if x+1 > len(input) == false && y-1 < 0 == false {
-					if runeIsADigit(input[x+1][y-1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x+1, y-1))
+					if IsRuneDigit(input[x+1][y-1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x+1, y-1))
 					}
 				}
 				if x-1 < 0 == false && y+1 > len(input[x]) == false {
-					if runeIsADigit(input[x-1][y+1]) {
-						numbers = appendNumberIfNotAlreadyAppended(numbers, getNumberRunes(input, x-1, y+1))
+					if IsRuneDigit(input[x-1][y+1]) {
+						numbers = AppendUniqueRunes(numbers, DetermineAndGetFullNumber(input, x-1, y+1))
 					}
 				}
 
@@ -167,7 +162,8 @@ func generateResult2(input [][]rune) int {
 	return returnValue
 }
 
-func appendNumberIfNotAlreadyAppended(input [][]rune, appendValue []rune) [][]rune {
+// Appends a rune-field into a rune-matrix if its not already contained
+func AppendUniqueRunes(input [][]rune, appendValue []rune) [][]rune {
 	shouldNotAppend := false
 
 	for x := range input {
@@ -183,34 +179,39 @@ func appendNumberIfNotAlreadyAppended(input [][]rune, appendValue []rune) [][]ru
 
 }
 
-func runeIsADigit(value rune) bool {
+// Determines if a rune is a ascii-number
+func IsRuneDigit(value rune) bool {
 	return value == '0' || value == '1' || value == '2' || value == '3' || value == '4' || value == '5' || value == '6' || value == '7' || value == '8' || value == '9'
 }
 
-func getNumberRunes(input [][]rune, x int, y int) []rune {
-	return collectNumberRunes(make([]rune, 0), input, x, findFirstDigitCoordinate(input, x, y))
+// Determines a full Number by its matrix-coordinates of any digit
+func DetermineAndGetFullNumber(input [][]rune, x int, y int) []rune {
+	return CollectFullNumberRunes(make([]rune, 0), input, x, DetermineFirstDigitYCoordinate(input, x, y))
 }
 
-func collectNumberRunes(returnValue []rune, input [][]rune, x int, y int) []rune {
-	if runeIsADigit(input[x][y]) {
+// Recursion that collects a full number from that starting coordinates of a digit
+func CollectFullNumberRunes(returnValue []rune, input [][]rune, x int, y int) []rune {
+	if IsRuneDigit(input[x][y]) {
 		returnValue = append(returnValue, input[x][y])
-		return collectNumberRunes(returnValue, input, x, y+1)
+		return CollectFullNumberRunes(returnValue, input, x, y+1)
 	} else {
 		return returnValue
 	}
 }
 
-func findFirstDigitCoordinate(input [][]rune, x int, y int) int {
-	if runeIsADigit(input[x][y]) == false {
+// Recursion that converts any matrix-coordinates into the first digit-coordinate of the Number
+func DetermineFirstDigitYCoordinate(input [][]rune, x int, y int) int {
+	if IsRuneDigit(input[x][y]) == false {
 		return y + 1
 	} else if y-1 == -1 {
 		return 0
 	} else {
-		return findFirstDigitCoordinate(input, x, y-1)
+		return DetermineFirstDigitYCoordinate(input, x, y-1)
 	}
 }
 
-func parseInput(filepath string) [][]rune {
+// parses the input into a matrix
+func Parse(filepath string) [][]rune {
 	var rows, colums int
 
 	input := ReadFile(filepath)
@@ -232,8 +233,10 @@ func parseInput(filepath string) [][]rune {
 	return returnValue
 }
 
-func ReadFile(fileinput string) string {
-	fileContent, err := os.ReadFile(fileinput)
+// Reads the contents of a file and returns its content.
+// Will panic if file-reading fails for any reason
+func ReadFile(fileInput string) string {
+	fileContent, err := os.ReadFile(fileInput)
 
 	if err != nil {
 		log.Panic(err)
@@ -242,7 +245,17 @@ func ReadFile(fileinput string) string {
 	return string(fileContent)
 }
 
-func generatePositiveCoordinates(filepath string, input [][]rune) [][]int {
+// part-types
+const (
+	//Rune is not a part or next to a part
+	NotPart int = 0
+	//Rune is directly positioned next to a part
+	NextToPart = 2
+	Part       = 1
+)
+
+// Maps input matrix to a part-type matrix
+func InputToNumericPartMap(filepath string, input [][]rune) [][]int {
 	inputtext := ReadFile(filepath)
 
 	var rows, colums int
@@ -258,33 +271,32 @@ func generatePositiveCoordinates(filepath string, input [][]rune) [][]int {
 	for x, colum := range input {
 		for y := range colum {
 			if input[x][y] != '.' && input[x][y] != '\n' && input[x][y] != '\r' && (input[x][y] < '0' || input[x][y] > '9') {
-				returnValue[x][y] = 1
+				returnValue[x][y] = Part
 				if x-1 < 0 == false {
-					returnValue[x-1][y] = 2
+					returnValue[x-1][y] = NextToPart
 				}
 				if x+1 > len(input) == false {
-					returnValue[x+1][y] = 2
+					returnValue[x+1][y] = NextToPart
 				}
 				if y-1 < 0 == false {
-					returnValue[x][y-1] = 2
+					returnValue[x][y-1] = NextToPart
 				}
 				if y+1 > len(input[x]) == false {
-					returnValue[x][y+1] = 2
+					returnValue[x][y+1] = NextToPart
 				}
 				if x+1 > len(input) == false && y+1 > len(input[x]) == false {
-					returnValue[x+1][y+1] = 2
+					returnValue[x+1][y+1] = NextToPart
 				}
 				if x-1 < 0 == false && y-1 < 0 == false {
-					returnValue[x-1][y-1] = 2
+					returnValue[x-1][y-1] = NextToPart
 				}
 				if x+1 > len(input) == false && y-1 < 0 == false {
-					returnValue[x+1][y-1] = 2
+					returnValue[x+1][y-1] = NextToPart
 				}
 				if x-1 < 0 == false && y+1 > len(input[x]) == false {
-					returnValue[x-1][y+1] = 2
+					returnValue[x-1][y+1] = NextToPart
 				}
 			}
-
 		}
 	}
 
