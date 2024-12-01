@@ -1,7 +1,3 @@
-// Listen iterieren, distance zwischen liste 1 x und liste 2 x in Liste 3 pushen
-// alles von Liste 3 zusammen rechnen
-// Ergebnis ausgeben
-
 use std::fs;
 use std::path::Path;
 
@@ -33,7 +29,22 @@ fn main() {
         sum += distance_list[i];
     }
 
-    println!("Result: {sum}")
+    println!("Result 1: {sum}");
+
+    let mut similarity_score : i32 = 0;
+
+    for i in 0..left_list.len() {
+        let mut found = 0;
+        for y in 0..right_list.len() {
+            if left_list[i] == right_list[y] {
+                found+= 1;
+            }
+        }
+        similarity_score += left_list[i] * found;
+    }
+
+    println!("Result 2: {similarity_score}");
+
 }
 
 fn parse_input(input: String) -> (Vec<i32>, Vec<i32>) {
